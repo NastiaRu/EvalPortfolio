@@ -1,0 +1,2 @@
+to store ML scripts
+- Utilize FastAPI services to speed up ML model training + testing

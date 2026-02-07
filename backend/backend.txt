@@ -1,0 +1,2 @@
+to store backend processing scripts
+- Utilize Flask API for simplicity 
