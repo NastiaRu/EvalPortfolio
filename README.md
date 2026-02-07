@@ -3,7 +3,8 @@
 - Andrew Y. Chen - <ayc23@pitt.edu>
 - Anastasiia Rudenko - <anastasiia.rudenko@pitt.edu>
 
-Idea: The Financial "Goodness" Calculator
+Idea: The Financial "Goodness" Calculator.
+
 **"Don't just measure your wealth. Measure your wisdom."**
 
 ## The Big Idea
