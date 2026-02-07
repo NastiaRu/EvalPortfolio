@@ -19,7 +19,7 @@ def fetch_data(tickers, period="1y"):
     all_tickers = tickers + [MARKET_TICKER]
     
     # Download data
-    data = yf.download(all_tickers, period=period, progress=False)['Close']
+    data = yf.download(all_tickers, period=period, progress=False)['Close'] # type: ignore
     
     # Drop any rows with missing values (clean data)
     data = data.dropna()
