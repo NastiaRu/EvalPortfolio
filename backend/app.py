@@ -16,17 +16,23 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
 
 # Mock user database (replace with real DB later)
 MOCK_USERS = {
-    'demo': {
+    'NastiaRu': {
         'id': 1,
-        'username': 'demo',
+        'username': 'NastiaRu',
         'password': 'password',  # In production: use bcrypt hashed passwords
-        'email': 'demo@example.com'
+        'email': 'nastia@example.com'
     },
-    'andrew': {
+    'AndrewChen': {
         'id': 2,
-        'username': 'andrew',
-        'password': 'andrew123',
+        'username': 'AndrewChen',
+        'password': 'password',
         'email': 'andrew@example.com'
+    },
+    'LukeB': {
+        'id': 3,
+        'username': 'LukeB',
+        'password': 'password',
+        'email': 'luke@example.com'
     }
 }
 
