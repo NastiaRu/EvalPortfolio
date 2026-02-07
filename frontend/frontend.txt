@@ -1,1 +1,2 @@
 to store frontend react + vite files
+- npm run dev 
