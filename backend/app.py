@@ -7,6 +7,7 @@ from flask_cors import CORS
 import os
 from datetime import datetime
 import secrets
+from analysis import financial_calculator as fin_calc
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for React frontend
@@ -61,7 +62,8 @@ def root():
             'login': '/api/auth/login',
             'stocks': '/api/stocks',
             'analyze': '/api/analyze',
-            'suggestions': '/api/suggestions'
+            'suggestions': '/api/suggestions',
+            'portfolio': '/api/portfolio/submit',
         }
     }), 200
 
@@ -134,6 +136,87 @@ def logout():
     """User logout endpoint"""
     # In production: invalidate token in database
     return jsonify({'message': 'Logout successful'}), 200
+
+# ============================================================================
+# PORTFOLIO ENDPOINTS
+# ============================================================================
+
+@app.route('/api/portfolio/submit', methods=['POST'])
+def submit_portfolio():
+    """
+    Submit portfolio allocation
+    
+    Request body:
+    {
+        "allocations": {
+            "AAPL": 40,
+            "MSFT": 30,
+            "GOOGL": 20,
+            "AMZN": 10
+        }
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        if not data or 'allocations' not in data:
+            return jsonify({'message': 'Allocations data required'}), 400
+        
+        allocations = data['allocations']
+        
+        # Validation
+        if not allocations or not isinstance(allocations, dict):
+            return jsonify({'message': 'Invalid allocations format'}), 400
+        
+        # Check total is 100%
+        total = sum(allocations.values())
+        if abs(total - 100) > 0.01:
+            return jsonify({'message': f'Allocations must sum to 100%. Current: {total}%'}), 400
+        
+        print(f"✅ Portfolio submitted: {allocations}")
+
+        # Financial Calculator HERE
+        try:
+            # Format data for your calculator
+            calculator_input = {'allocations': allocations}
+            
+            # Call your calculator function, ask Nastia for more information
+            calculator_results = fin_calc.calculate_goodness_score(calculator_input)  # Replace with actual function
+            
+            print(f"📊 Calculator output: {calculator_results}")
+            
+            # Return results
+            return jsonify({
+                'message': 'Portfolio submitted successfully',
+                'allocations': allocations,
+                'total': total,
+                'analysis': calculator_results  # 🎯 Add calculator results
+            }), 200
+            
+        except Exception as calc_error:
+            print(f"❌ Calculator failed: {str(calc_error)}")
+            import traceback
+            traceback.print_exc()  # Print full error for debugging
+            
+            # Return without calculator results
+            return jsonify({
+                'message': 'Portfolio submitted but analysis failed',
+                'allocations': allocations,
+                'total': total,
+                'error': str(calc_error)
+            }), 200
+        
+    except Exception as e:
+        print(f"❌ Portfolio submission error: {str(e)}")
+        return jsonify({'message': 'Internal server error'}), 500
+
+@app.route('/api/portfolio', methods=['GET'])
+def get_portfolio():
+    """Get user's portfolio (placeholder)"""
+    # TODO: Get from database
+    return jsonify({
+        'message': 'No portfolios yet'
+    }), 200
 
 # ============================================================================
 # STOCK ENDPOINTS (Placeholder - Andrew to implement)
@@ -256,6 +339,6 @@ if __name__ == '__main__':
     
     app.run(
         host='0.0.0.0',
-        port=5000,
+        port=5001,
         debug=True
     )
