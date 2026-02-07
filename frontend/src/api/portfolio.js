@@ -12,9 +12,9 @@ import api from './auth'
  */
 export const submitPortfolio = async (portfolio) => {
   try {
-    console.log('Submitting portfolio to API:', portfolio)
+    console.log('Submitting portfolio to API:', portfolio) /* Clicked on the Submit Portfolio Button - POST Request is made */
 
-    const response = await api.post('/portfolio/submit', {
+    const response = await api.post('/portfolio/submit', { /* Waits for response - async method */
       allocations: portfolio
     })
 

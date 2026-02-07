@@ -176,6 +176,8 @@ if __name__ == "__main__":
     # --- USER INPUT AREA ---
     # You can change these to test different portfolios!
     
+    # portfolio - {allocations: {MSFT: 25, AAPL: 25, GOOGL: 25, AMZN: 25}} <- incoming from frontend, feed into this script
+    
     # Example 1: The "Tech Bro" Portfolio (Risky)
     my_stocks = ['TSLA', 'NVDA', 'AMD']
     my_weights = np.array([0.9, 0.05, 0.05]) 

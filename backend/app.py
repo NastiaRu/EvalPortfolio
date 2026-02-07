@@ -7,6 +7,7 @@ from flask_cors import CORS
 import os
 from datetime import datetime
 import secrets
+from analysis import financial_calculator as fin_calc
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for React frontend
@@ -173,12 +174,37 @@ def submit_portfolio():
             return jsonify({'message': f'Allocations must sum to 100%. Current: {total}%'}), 400
         
         print(f"✅ Portfolio submitted: {allocations}")
-        
-        return jsonify({
-            'message': 'Portfolio submitted successfully',
-            'allocations': allocations,
-            'total': total
-        }), 200
+
+        # Financial Calculator HERE
+        try:
+            # Format data for your calculator
+            calculator_input = {'allocations': allocations}
+            
+            # Call your calculator function, ask Nastia for more information
+            calculator_results = fin_calc.calculate_goodness_score(calculator_input)  # Replace with actual function
+            
+            print(f"📊 Calculator output: {calculator_results}")
+            
+            # Return results
+            return jsonify({
+                'message': 'Portfolio submitted successfully',
+                'allocations': allocations,
+                'total': total,
+                'analysis': calculator_results  # 🎯 Add calculator results
+            }), 200
+            
+        except Exception as calc_error:
+            print(f"❌ Calculator failed: {str(calc_error)}")
+            import traceback
+            traceback.print_exc()  # Print full error for debugging
+            
+            # Return without calculator results
+            return jsonify({
+                'message': 'Portfolio submitted but analysis failed',
+                'allocations': allocations,
+                'total': total,
+                'error': str(calc_error)
+            }), 200
         
     except Exception as e:
         print(f"❌ Portfolio submission error: {str(e)}")
