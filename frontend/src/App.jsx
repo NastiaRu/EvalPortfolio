@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
 import Login from './pages/Login'
+import StockSelection from './pages/StockSelection'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState(null)
+  const [portfolio, setPortfolio] = useState(null)
 
   const handleLoginSuccess = (userData) => {
     setIsAuthenticated(true)
@@ -11,6 +13,11 @@ function App() {
     // Store token in sessionStorage
     sessionStorage.setItem('authToken', userData.token)
     sessionStorage.setItem('username', userData.username)
+  }
+
+  const handlePortfolioSubmit = (portfolioData) => {
+    setPortfolio(portfolioData)
+    console.log('Portfolio Saved:', portfolioData)
   }
 
   const handleLogout = () => {
@@ -23,6 +30,11 @@ function App() {
   // If not authenticated, show login
   if (!isAuthenticated) {
     return <Login onLoginSuccess={handleLoginSuccess} />
+  }
+
+  // show stock selection if no portfolio yet
+  if (!portfolio) {
+    return <StockSelection onSubmitSuccess={handlePortfolioSubmit}/>
   }
 
   // After login, show placeholder for other pages
@@ -56,31 +68,51 @@ function App() {
         textAlign: 'center'
       }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-          🚧 Coming Soon
+          ✅ Portfolio Submitted!
         </h2>
         <p style={{ color: '#6b7280', marginBottom: '2rem' }}>
-          You'll build the following pages manually:
+          Porfolio successfully saved!
         </p>
-        <ul style={{ 
-          textAlign: 'left', 
-          maxWidth: '600px', 
+
+        {/* Show Portfolio*/}
+
+        <div style={{ 
+          backgroundColor: 'white', 
+          padding: '2rem', 
+          borderRadius: '0.5rem',
+          maxWidth: '600px',
           margin: '0 auto',
-          listStyle: 'none',
-          padding: 0
+          textAlign: 'left'
         }}>
-          <li style={{ padding: '0.75rem', backgroundColor: 'white', marginBottom: '0.5rem', borderRadius: '0.5rem' }}>
-            ✅ Login Page (Complete!)
-          </li>
-          <li style={{ padding: '0.75rem', backgroundColor: 'white', marginBottom: '0.5rem', borderRadius: '0.5rem' }}>
-            📝 Stock Selection Page (Choose 5 stocks, allocate percentages)
-          </li>
-          <li style={{ padding: '0.75rem', backgroundColor: 'white', marginBottom: '0.5rem', borderRadius: '0.5rem' }}>
-            📊 Analysis Dashboard (Show results, comparisons, scores)
-          </li>
-          <li style={{ padding: '0.75rem', backgroundColor: 'white', marginBottom: '0.5rem', borderRadius: '0.5rem' }}>
-            🤖 ML Suggestions Page (Display optimized allocations)
-          </li>
-        </ul>
+          <h3 style={{ fontWeight: 'bold', marginBottom: '1rem' }}>Your Allocations:</h3>
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            {Object.entries(portfolio).map(([ticker, percentage]) => (
+              <li key={ticker} style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between',
+                padding: '0.75rem',
+                borderBottom: '1px solid #e5e7eb'
+              }}>
+                <span style={{ fontWeight: 'bold' }}>{ticker}</span>
+                <span style={{ color: '#667eea', fontWeight: 'bold' }}>{percentage}%</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p style={{ color: '#6b7280', marginTop: '2rem', fontSize: '0.875rem' }}>
+          📊 Next: Build the Analysis Dashboard to show performance metrics
+        </p>
+
+        <button
+          onClick={() => setPortfolio(null)}
+          style={{
+            marginTop: '1.5rem',
+            width: 'auto',
+            padding: '0.5rem 1.5rem'
+          }}>
+          Edit Portfolio
+        </button>
+        
       </div>
     </div>
   )
