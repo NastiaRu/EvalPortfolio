@@ -65,60 +65,62 @@ export default function StockSelection({ onSubmitSuccess }) {
   }
 
   const handleSubmit = async () => {
-    setError('')
-    setLoading(true)
+  setError('')
+  setLoading(true)
 
-    // Validation
-    if (selectedStocks.length === 0) {
-      setError('Please select at least one stock')
-      setLoading(false)
-      return
-    }
-
-    // Check all allocations are filled
-    const hasEmptyAllocations = selectedStocks.some(ticker => !allocations[ticker] || allocations[ticker] === '')
-    if (hasEmptyAllocations) {
-      setError('Please enter allocation percentages for all selected stocks')
-      setLoading(false)
-      return
-    }
-
-    // Check sum is 100%
-    if (Math.abs(totalPercentage - 100) > 0.01) {
-      setError(`Allocations must sum to 100%. Current total: ${totalPercentage.toFixed(2)}%`)
-      setLoading(false)
-      return
-    }
-
-    try {
-      // Build portfolio data
-      const portfolio = {}
-      selectedStocks.forEach(ticker => {
-        portfolio[ticker] = parseFloat(allocations[ticker])
-      })
-
-      console.log('Submitting portfolio:', portfolio)
-
-      // Call API
-      const response = await submitPortfolio(portfolio)
-      
-      // Success
-      setSuccess(true)
-      console.log('Portfolio submitted successfully:', response)
-
-      // Notify parent after short delay
-      setTimeout(() => {
-        if (onSubmitSuccess) {
-          onSubmitSuccess(portfolio)
-        }
-      }, 1500)
-
-    } catch (err) {
-      setError(err.message || 'Failed to submit portfolio. Please try again.')
-    } finally {
-      setLoading(false)
-    }
+  // Validation
+  if (selectedStocks.length === 0) {
+    setError('Please select at least one stock')
+    setLoading(false)
+    return
   }
+
+  // Check all allocations are filled
+  const hasEmptyAllocations = selectedStocks.some(ticker => !allocations[ticker] || allocations[ticker] === '')
+  if (hasEmptyAllocations) {
+    setError('Please enter allocation percentages for all selected stocks')
+    setLoading(false)
+    return
+  }
+
+  // Check sum is 100%
+  if (Math.abs(totalPercentage - 100) > 0.01) {
+    setError(`Allocations must sum to 100%. Current total: ${totalPercentage.toFixed(2)}%`)
+    setLoading(false)
+    return
+  }
+
+  try {
+    // Build portfolio data
+    const portfolioAllocations = {}
+    selectedStocks.forEach(ticker => {
+      portfolioAllocations[ticker] = parseFloat(allocations[ticker])
+    })
+
+    console.log('Submitting portfolio:', portfolioAllocations)
+
+    // Call API - gets back full response with allocations + analysis
+    const response = await submitPortfolio(portfolioAllocations)
+    
+    console.log('Full API response:', response)
+    console.log('Has analysis?', response.analysis)
+    
+    // Success
+    setSuccess(true)
+
+    // ✅ Pass the FULL response (includes both allocations AND analysis)
+    setTimeout(() => {
+      if (onSubmitSuccess) {
+        onSubmitSuccess(response)  // Changed from 'portfolio' to 'response'
+      }
+    }, 1500)
+
+  } catch (err) {
+    setError(err.message || 'Failed to submit portfolio. Please try again.')
+  } finally {
+    setLoading(false)
+  }
+}
 
   return (
     <div className="min-h-screen bg-gradient flex items-center justify-center" style={{ padding: '2rem' }}>

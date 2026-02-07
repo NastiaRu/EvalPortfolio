@@ -9,20 +9,53 @@ RISK_FREE_RATE = 0.042  # 4.2% (Approx. current 10-Year Treasury Yield)
 INFLATION_RATE = 0.03   # 3.0% (Target Inflation Benchmark)
 MARKET_TICKER = "^GSPC" # S&P 500 Symbol
 
+# def fetch_data(tickers, period="1y"):
+#     """
+#     Fetches historical closing prices for user stocks + S&P 500.
+#     """
+#     print(f"\n[SYSTEM] Fetching data for {', '.join(tickers)} + S&P 500...")
+    
+#     # We add the market ticker to the list to fetch everything at once
+#     all_tickers = tickers + [MARKET_TICKER]
+    
+#     # Download data
+#     data = yf.download(all_tickers, period=period, progress=False)['Close'] # type: ignore
+    
+#     # Drop any rows with missing values (clean data)
+#     data = data.dropna()
+    
+#     return data
+
 def fetch_data(tickers, period="1y"):
-    """
-    Fetches historical closing prices for user stocks + S&P 500.
-    """
     print(f"\n[SYSTEM] Fetching data for {', '.join(tickers)} + S&P 500...")
     
-    # We add the market ticker to the list to fetch everything at once
+    # Always work with a list
+    if isinstance(tickers, str):
+        tickers = [tickers]
+    
+    # Add market ticker
     all_tickers = tickers + [MARKET_TICKER]
     
     # Download data
-    data = yf.download(all_tickers, period=period, progress=False)['Close'] # type: ignore
+    raw_data = yf.download(all_tickers, period=period, progress=False)
     
-    # Drop any rows with missing values (clean data)
-    data = data.dropna()
+    # Handle different yfinance return structures
+    if len(all_tickers) == 2:  # Only 1 user stock + market
+        # yfinance returns a simple DataFrame for 2 tickers
+        data = raw_data['Close'] if 'Close' in raw_data.columns else raw_data  # type: ignore
+    else:
+        # Multiple tickers - get Close prices
+        data = raw_data['Close']  # type: ignore
+    
+    # Ensure it's a DataFrame
+    if isinstance(data, pd.Series):
+        data = data.to_frame()
+    
+    # Drop any rows with missing values
+    data = data.dropna() # type: ignore
+    
+    print(f"[DEBUG] Data shape: {data.shape}")
+    print(f"[DEBUG] Columns: {list(data.columns)}")
     
     return data
 
@@ -106,6 +139,19 @@ def calculate_goodness_score(metrics):
         "sharpe_pts": score_sharpe
     }
 
+def get_verdict(score):
+    verdict = ""
+    if score > 80: 
+        verdict="EXCELLENT (Professional Grade)"
+    elif score > 60: 
+        verdict="GOOD (Solid Strategy)"
+    elif score > 40: 
+        verdict="MEDIOCRE (Needs Tuning)"
+    else: 
+        verdict="POOR (High Risk / Low Reward)"
+
+    return verdict
+
 def print_report(metrics, score, breakdown, tickers, weights):
     """
     Outputs a beautiful ASCII report for the user.
@@ -170,6 +216,121 @@ def print_report(metrics, score, breakdown, tickers, weights):
         print(f"   <1.0 is bad: you get volatile returns given the risk taken.")
 
     print("\n" + "="*60 + "\n")
+
+    def analyze_portfolio(portfolio_data):
+        """
+        Main function to analyze portfolio and return results.
+        Called from Flask API.
+        
+        Args:
+            portfolio_data: {"allocations": {"AAPL": 25, "MSFT": 25, ...}}
+        
+        Returns:
+            dict with all analysis results
+        """
+    try:
+        # Extract data
+        allocations = portfolio_data['allocations'] # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+        
+        # Convert to the format your functions expect
+        my_stocks = list(allocations.keys())
+        my_weights = np.array([allocations[ticker]/100 for ticker in my_stocks])
+        
+        # 1. Get Data
+        market_data = fetch_data(my_stocks)
+        
+        # 2. Run Financial Math
+        metrics = calculate_metrics(market_data, my_stocks, my_weights)
+        
+        # 3. Grade the Portfolio
+        score, breakdown = calculate_goodness_score(metrics)
+        
+        # 4. Build response - 🔥 Convert numpy types to Python types
+        response = {
+            'score': int(score),  # ✅ Convert to int
+            'verdict': get_verdict(score),
+            'stocks': my_stocks,
+            'weights': allocations,
+            'metrics': {
+                'return': float(metrics['return'] * 100),  # ✅ Convert to float
+                'market_return': float(metrics['market_return'] * 100),
+                'inflation_rate': float(INFLATION_RATE * 100),
+                'beats_inflation': bool(metrics['return'] > INFLATION_RATE),  # ✅ Convert to bool
+                'alpha': float(metrics['alpha'] * 100),
+                'beta': float(metrics['beta']),
+                'volatility': float(metrics['volatility'] * 100),
+                'sharpe': float(metrics['sharpe'])
+            },
+            'breakdown': {
+                'return_pts': int(breakdown['return_pts']),  # ✅ Convert to int
+                'alpha_pts': int(breakdown['alpha_pts']),
+                'sharpe_pts': int(breakdown['sharpe_pts'])
+            }
+        }
+        
+        return response
+        
+    except Exception as e:
+        raise Exception(f"Portfolio analysis failed: {str(e)}")
+
+
+def analyze_portfolio(portfolio_data):
+    """
+    Main function to analyze portfolio and return results.
+    Called from Flask API.
+    
+    Args:
+        portfolio_data: {"allocations": {"AAPL": 25, "MSFT": 25, ...}}
+    
+    Returns:
+        dict with all analysis results (JSON-serializable)
+    """
+    try:
+        # Extract data
+        allocations = portfolio_data['allocations']
+        
+        # Convert to the format your functions expect
+        my_stocks = list(allocations.keys())
+        my_weights = np.array([allocations[ticker]/100 for ticker in my_stocks])
+        
+        # 1. Get Data
+        market_data = fetch_data(my_stocks)
+        
+        # 2. Run Financial Math
+        metrics = calculate_metrics(market_data, my_stocks, my_weights)
+        
+        # 3. Grade the Portfolio
+        score, breakdown = calculate_goodness_score(metrics)
+        
+        # 4. Build response - Convert all numpy types to Python types
+        response = {
+            'score': int(score),
+            'verdict': str(get_verdict(score)),
+            'stocks': list(my_stocks),
+            'weights': dict(allocations),
+            'metrics': {
+                'return': float(metrics['return'] * 100),
+                'market_return': float(metrics['market_return'] * 100),
+                'inflation_rate': float(INFLATION_RATE * 100),
+                'beats_inflation': bool(metrics['return'] > INFLATION_RATE),
+                'alpha': float(metrics['alpha'] * 100),
+                'beta': float(metrics['beta']),
+                'volatility': float(metrics['volatility'] * 100),
+                'sharpe': float(metrics['sharpe'])
+            },
+            'breakdown': {
+                'return_pts': int(breakdown['return_pts']),
+                'alpha_pts': int(breakdown['alpha_pts']),
+                'sharpe_pts': int(breakdown['sharpe_pts'])
+            }
+        }
+        
+        return response
+        
+    except Exception as e:
+        raise Exception(f"Portfolio analysis failed: {str(e)}")
+
+
 
 # --- MAIN EXECUTION ---
 if __name__ == "__main__":
