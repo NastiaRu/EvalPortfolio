@@ -69,7 +69,7 @@ class TradingEnv:
         reward = np.clip(mean_r / (std_r + 1e-6), -1.0, 1.0)
 
         self.t += 1
-        if self.t >= len(self.prices):
+        if self.t >= 10:
             self.done = True
             next_state = None
         else:
@@ -127,11 +127,13 @@ def train(env, policy, optimizer, episodes=1000, gamma=0.99):
             actions = []
             step_log_probs = []
 
+            price = np.array(env.prices[env.t], dtype=np.float32)
+
             for i in range(env.n_stocks):
                 masked_logits = logits[i].clone()
                 if env.shares[i] <= 0:
                     masked_logits[2] = -1e9
-                if env.cash < env.prices[env.t][i]:
+                if env.cash < price[i]:
                     masked_logits[1] = -1e9
 
                 dist = torch.distributions.Categorical(logits=masked_logits)

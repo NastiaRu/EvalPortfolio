@@ -164,8 +164,7 @@ for i in range(env.n_stocks):
     action = dist.sample()
     actions.append(action.item())
 
-actions = np.array(actions)
-print("Actions for this state:", actions)
+#actions = np.array(actions)
 print("Final shares", env.shares)
 
 # SMOOTH REWARDS
@@ -195,3 +194,56 @@ plt.show()
 
 
 #5 optimal purchases
+
+def get_recommended_actions(state_tensor, policy, price_vector, initial_shares=None, initial_cash=10000):
+    """
+    Returns recommended actions for a single step.
+    
+    state_tensor: torch.Tensor of shape [state_dim]
+    policy: your PolicyNetwork
+    price_vector: np.array or torch.Tensor with current stock prices
+    initial_shares: np.array of current shares for each stock
+    initial_cash: float
+    """
+    n_stocks = len(price_vector)
+    
+    # Convert prices to numpy float32
+    if torch.is_tensor(price_vector):
+        price_vector = price_vector.cpu().numpy()
+    price_vector = np.array(price_vector, dtype=np.float32)
+    
+    # Initialize shares
+    shares = np.zeros(n_stocks, dtype=np.float32) if initial_shares is None else np.array(initial_shares, dtype=np.float32)
+    cash = float(initial_cash)
+
+    # Forward pass
+    state_t = state_tensor.unsqueeze(0)  # add batch dim
+    logits = policy(state_t)
+    logits = logits.view(n_stocks, 3)  # 3 actions per stock
+
+    actions = []
+
+    for i in range(n_stocks):
+        masked_logits = logits[i].clone()
+
+        # Mask illegal actions
+        if shares[i] <= 0:
+            masked_logits[2] = -1e9  # can't sell
+        if cash < price_vector[i]:
+            masked_logits[1] = -1e9  # can't buy
+
+        dist = torch.distributions.Categorical(logits=masked_logits)
+        a = dist.sample()
+        actions.append(int(a.item()))
+
+        # Update shares and cash to simulate step
+        if a.item() == 1:  # BUY
+            if cash >= price_vector[i]:
+                cash -= price_vector[i]
+                shares[i] += 1
+        elif a.item() == 2:  # SELL
+            if shares[i] >= 1:
+                cash += price_vector[i]
+                shares[i] -= 1
+
+    return np.array(actions), shares, cash
