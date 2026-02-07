@@ -1,0 +1,41 @@
+{
+    "allocations": {
+        "AMZN": 25,
+        "GOOGL": 25,
+        "MSFT": 25,
+        "NVDA": 25
+    },
+    "analysis": {
+        "breakdown": {
+            "alpha_pts": 40,
+            "return_pts": 30,
+            "sharpe_pts": 12
+        },
+        "metrics": {
+            "alpha": 7.387183711326198,
+            "beats_inflation": true,
+            "beta": 1.289166437939107,
+            "inflation_rate": 3.0,
+            "market_return": 15.852701065691235,
+            "return": 26.609454836552604,
+            "sharpe": 0.812126669015862,
+            "volatility": 27.593546292117782
+        },
+        "score": 82,
+        "stocks": [
+            "NVDA",
+            "GOOGL",
+            "AMZN",
+            "MSFT"
+        ],
+        "verdict": "EXCELLENT (Professional Grade)",
+        "weights": {
+            "AMZN": 25,
+            "GOOGL": 25,
+            "MSFT": 25,
+            "NVDA": 25
+        }
+    },
+    "message": "Portfolio analyzed successfully",
+    "total": 100
+}

@@ -22,7 +22,7 @@ export const submitPortfolio = async (portfolio) => {
 
     return response.data
   } catch (error) {
-    console.error('Portfolio submission error:', error)
+    console.error('Portfolio submission error:', error) /* Issue here */
 
     if (error.code === 'ECONNABORTED') {
       throw new Error('Request timeout. Please try again.')
