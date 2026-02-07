@@ -55,6 +55,8 @@ class TradingEnv:
         """
         if self.done:
             raise ValueError("Episode is done, call reset()")
+        
+     
 
         price = self.prices[self.t]
         for i, a in enumerate(action):
@@ -76,7 +78,9 @@ class TradingEnv:
             reward = 0
         else:
             #Add sharpe reward?
-            reward = self.portfolio_value - self.prev_value
+            reward = 100*np.log(self.portfolio_value / self.prev_value)
+            reward=np.clip(reward,-1.0,1.0)
+            #print(reward)
 
         self.prev_value = self.portfolio_value
 
@@ -90,57 +94,105 @@ class TradingEnv:
             next_state = None
         return next_state, reward, self.done, {}
 class PolicyNetwork(nn.Module):
-    def __init__(self):
+    def __init__(self, state_dim, n_stocks):
         super(PolicyNetwork, self).__init__()
         self.fc = nn.Sequential(
-            nn.Linear(14, 128),
+            nn.Linear(state_dim, 128),
             nn.ReLU(),
-            nn.Linear(128, 2),
-            nn.Softmax(dim=-1),
+            nn.Linear(128, n_stocks * 3),  # 3 actions per stock
+            #nn.Softmax(dim=-1),
         )
 
     def forward(self, x):
         return self.fc(x)
         
 def compute_discounted_rewards(rewards, gamma=0.99):
-    discounted_rewards = []
     R = 0
+    returns = []
     for r in reversed(rewards):
         R = r + gamma * R
-        discounted_rewards.insert(0, R)
-    discounted_rewards = torch.tensor(discounted_rewards)
-    discounted_rewards = (discounted_rewards - discounted_rewards.mean()) / (discounted_rewards.std() + 1e-5)
-    return discounted_rewards
+        returns.insert(0, R)
 
-def train(env, policy, optimizer, episodes=1000):
+    returns = torch.tensor(returns, dtype=torch.float32)
+    std = returns.std()
+
+    if std < 1e-4:
+        return returns  # DO NOT NORMALIZE
+
+    return (returns - returns.mean()) / (std + 1e-5)
+
+def train(env, policy, optimizer, episodes=1000, gamma=0.99):
     for episode in range(episodes):
         state = env.reset()
         log_probs = []
         rewards = []
         done = False
+        entropies=[]
 
         while not done:
-            state = torch.FloatTensor(state).unsqueeze(0)
-            probs = policy(state)
-            m = Categorical(probs)
-            action = m.sample()
-            state, reward, done, _ = env.step(action)
+            state_t = state.unsqueeze(0)  # Add batch dimension
+            # ---- FORWARD PASS ----
+            logits = policy(state_t)  
+            logits = logits.view(env.n_stocks, 3)
+            if episode % 50 == 0:
+                print("LOGITS START:", logits[0].detach().cpu().numpy())
 
-            log_probs.append(m.log_prob(action))
+            actions = []
+            step_log_probs = []
+
+            # ---- SAMPLE PER-STOCK ACTIONS ----
+            for i in range(env.n_stocks):
+                masked_logits = logits[i].clone()
+
+                # ACTION 2 = SELL
+                if env.shares[i] <= 0:
+                  masked_logits[2] = -1e9
+
+                # ACTION 1 = BUY
+                if env.cash < env.prices[env.t][i]:
+                  masked_logits[1] = -1e9
+
+                dist = Categorical(logits=masked_logits)
+
+                a = dist.sample()
+                actions.append(a.item())
+                step_log_probs.append(dist.log_prob(a))
+                entropies.append(dist.entropy())
+
+            actions = np.array(actions)
+
+            # ---- ENV STEP ----
+            next_state, reward, done, _ = env.step(actions)
+
+            log_probs.append(torch.stack(step_log_probs).sum())
             rewards.append(reward)
-            # Inside the train function, after an episode ends:
 
-            if done:
-                episode_rewards.append(sum(rewards))
-                discounted_rewards = compute_discounted_rewards(rewards)
-                policy_loss = []
-                for log_prob, Gt in zip(log_probs, discounted_rewards):
-                    policy_loss.append(-log_prob * Gt)
-                optimizer.zero_grad()
-                policy_loss = torch.cat(policy_loss).sum()
-                policy_loss.backward()
-                optimizer.step()
+            state = next_state
 
-                if episode % 50 == 0:
-                    print(f"Episode {episode}, Total Reward: {sum(rewards)}")
-                break
+        # ---- EPISODE END: POLICY GRADIENT ----
+        discounted_rewards = compute_discounted_rewards(rewards, gamma)
+
+        policy_loss = []
+        for log_prob, Gt in zip(log_probs, discounted_rewards):
+            policy_loss.append(-log_prob * Gt)
+
+        optimizer.zero_grad()
+        loss = torch.stack(policy_loss).sum()
+        policy_loss=torch.stack(policy_loss).sum()
+        entropy_loss=-torch.stack(entropies).sum()
+        loss=policy_loss-0.01*entropy_loss
+        loss.backward()
+        print(policy.fc[0].weight.grad.abs().mean())
+        optimizer.step()
+
+        episode_rewards.append(sum(rewards))
+
+        
+
+
+        if episode % 50 == 0:
+            print("LOGITS END:", policy(state_t)[0].detach().cpu().numpy())
+            with torch.no_grad():
+                probs=torch.softmax(logits, dim=-1)
+                print("DEBUG ACTION PROBS (STOCK 0):", probs[0].cpu().numpy())
+            print(f"EPISODE {episode} | TOTAL REWARD: {sum(rewards):.2f}")

@@ -43,7 +43,7 @@ X_seq, y_seq = create_sequences(prices, SEQ_LEN)
 X_tensor = torch.tensor(X_seq, dtype=torch.float32)
 y_tensor = torch.tensor(y_seq, dtype=torch.float32)
 
-print(X_tensor)
+#print(X_tensor)
 # -----------------------
 # 3️⃣ DEFINE LSTM MODEL
 # -----------------------
@@ -68,7 +68,7 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 # 4️⃣ TRAIN MODEL
 # -----------------------
 variance_y=torch.var(y_tensor, unbiased=False).item()
-EPOCHS = 100
+EPOCHS = 10
 loss_history=[]
 for epoch in range(EPOCHS):
     optimizer.zero_grad()
@@ -99,8 +99,14 @@ for i in range(len(prices) - SEQ_LEN-1):
     new_prices=model(curr_prices[i:i+1])
     new_prices_np=new_prices.cpu().detach().numpy()
     env_prices.append(new_prices_np)
+print(env_prices)
 env_prices=np.array(env_prices).squeeze()
 env_prices=torch.tensor(env_prices)
+
+#Add some noise to encourage exploration
+returns = torch.diff(env_prices, dim=0, prepend=env_prices[:1])
+env_prices = env_prices * (1 + 0.05 * returns)
+
 
 
 #print(env_prices)
@@ -116,8 +122,8 @@ if 'Date' in macro_df.columns:
 macro_numeric = macro_df.astype(np.float32).values
 
 env = TradingEnv(prices=env_prices, macro=macro_numeric, initial_cash=10000)
-policy = PolicyNetwork()
-optimizer = optim.Adam(policy.parameters(), lr=0.001)
+policy = PolicyNetwork(state_dim=14,n_stocks=4)
+optimizer = optim.Adam(policy.parameters(), lr=3e-4)
 stock_agent.train(env, policy, optimizer, episodes=1000)
 
 
