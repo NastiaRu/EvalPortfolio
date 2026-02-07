@@ -3,10 +3,10 @@ import pandas as pd
 from fredapi import Fred
 
 # -------- CONFIG --------
-START = "2025-01-01"
+START = "2025-04-01"
 END = "2026-01-01"
-STOCKS = ["NVDA", "AAPL", "MSFT", "GOOGL", "AMZN"]
-FRED_API_KEY = "PUT_YOUR_FRED_API_KEY_HERE"
+STOCKS = ["NVDA", "AAPL", "MSFT", "AMZN"]
+FRED_API_KEY = "e570ccf751ae9ecb957780a7ae4c816a"
 # ------------------------
 
 # Pull stock prices (CLOSE)
