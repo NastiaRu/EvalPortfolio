@@ -8,7 +8,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-#import matplotlib.pyplot as plt
+from torch.distributions import Categorical
+import matplotlib.pyplot as plt
 import stock_agent
 from stock_agent import TradingEnv, PolicyNetwork
 
@@ -92,16 +93,17 @@ torch.save(model.state_dict(), 'model_dict.pt')
 
 #RL
 
-env_prices=[]
-curr_prices=X_tensor
 
-for i in range(len(prices) - SEQ_LEN-1):
-    new_prices=model(curr_prices[i:i+1])
-    new_prices_np=new_prices.cpu().detach().numpy()
-    env_prices.append(new_prices_np)
-print(env_prices)
-env_prices=np.array(env_prices).squeeze()
-env_prices=torch.tensor(env_prices)
+env_prices=y_tensor
+#print(env_prices.shape)
+
+#for i in range(len(prices) - SEQ_LEN-1):
+    #new_prices=curr_prices[i:i+1]
+    #new_prices_np=new_prices.detach().numpy()
+    #env_prices.append(new_prices_np)
+#env_prices=np.array(env_prices).squeeze()
+#env_prices=torch.tensor(env_prices)
+#print(env_prices.shape)
 
 #Add some noise to encourage exploration
 returns = torch.diff(env_prices, dim=0, prepend=env_prices[:1])
@@ -121,10 +123,75 @@ if 'Date' in macro_df.columns:
 # Convert all remaining columns to float
 macro_numeric = macro_df.astype(np.float32).values
 
-env = TradingEnv(prices=env_prices, macro=macro_numeric, initial_cash=10000)
+initial_shares = np.array([4, 1, 2, 5])
+env = TradingEnv(prices=y_tensor, macro=macro_numeric, initial_cash=10000, initial_shares=initial_shares)
 policy = PolicyNetwork(state_dim=14,n_stocks=4)
 optimizer = optim.Adam(policy.parameters(), lr=3e-4)
-stock_agent.train(env, policy, optimizer, episodes=1000)
+episode_rewards=[]
+cash_history=[]
+portfolio_history=[]
+episode_rewards, cash_history, portfolio_history = stock_agent.train(env, policy, optimizer, episodes=100, gamma=0.99)
+
+#Given portfolio- recommend actions and estimate returns with RNN
+rand_portfolio=np.random.randint(1,5,size=4)
+env.initial_cash=10000
+print(rand_portfolio)
+# 1️⃣ Get a single state from your environment
+env.reset()
+state = env._get_state()  # shape: [state_dim]
+
+# 2️⃣ Add batch dimension for PyTorch
+state_t = state.unsqueeze(0)  # shape: [1, state_dim]
+
+# 3️⃣ Forward pass through your policy network
+logits = policy(state_t)      # shape: [1, n_stocks*3]
+
+# 4️⃣ Reshape to separate each stock
+logits = logits.view(env.n_stocks, 3)  # shape: [n_stocks, 3]
+
+# 5️⃣ Sample actions for each stock
+actions = []
+for i in range(env.n_stocks):
+    masked_logits = logits[i].clone()
+    
+    # mask impossible actions (optional)
+    if env.shares[i] <= 0:
+        masked_logits[2] = -1e9
+    if env.cash < env.prices[env.t][i]:
+        masked_logits[1] = -1e9
+
+    dist = Categorical(logits=masked_logits)
+    action = dist.sample()
+    actions.append(action.item())
+
+actions = np.array(actions)
+print("Actions for this state:", actions)
+print("Final shares", env.shares)
+
+# SMOOTH REWARDS
+window = 20
+smoothed_rewards = np.convolve(episode_rewards, np.ones(window)/window, mode='valid')
+
+plt.figure(figsize=(12,5))
+plt.subplot(1,2,1)
+plt.plot(cash_history, label="Cash")
+plt.plot(portfolio_history, label="Portfolio Value")
+plt.xlabel("Step")
+plt.ylabel("USD")
+plt.title("Cash & Portfolio Over Time")
+plt.legend()
+plt.grid(True)
+
+plt.subplot(1,2,2)
+plt.plot(episode_rewards, alpha=0.3, label="Raw Reward")
+plt.plot(range(window-1, len(episode_rewards)), smoothed_rewards, color='red', label="Smoothed Reward")
+plt.xlabel("Episode")
+plt.ylabel("Reward")
+plt.title("Episode Rewards (Sharpe-Based)")
+plt.legend()
+plt.grid(True)
+
+plt.show()
 
 
 #5 optimal purchases
