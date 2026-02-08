@@ -48,7 +48,12 @@ $$
 
 ### The Stability Test (Sharpe Ratio): 30 points/100
 * **The Philosophy:** High returns are useless if they come with heart-attack-inducing volatility. A portfolio that goes +50% one month and -40% the next is "inefficient." You should be paid for every unit of risk you take.
-* **The Metric:** **Sharpe Ratio** $$\frac{Return - RiskFree}{Volatility}$$
+* **The Metric:** **Sharpe Ratio**
+
+$$
+\frac{\text{Return} - \text{RiskFree}}{\text{Volatility}}
+$$
+
 * **The Score:**
     * Measures return per unit of risk
     * **Sharpe < 1.0:** Poor. (Too much risk for too little reward).
