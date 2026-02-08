@@ -14,13 +14,12 @@ Most personal finance apps answer a simple question: *"How much money do I have?
 But they fail to answer the far more important question: *"Is my portfolio actually __good__?"*
 
 In finance, a +10% return is meaningless without context.
-* If inflation is 12%, you actually lost money.
-* If the S&P 500 went up 20% while you made 10%, you wasted your time picking stocks.
-* If you took on the risk of a chaotic penny stock just to make a safe 5% return, you made a bad bet.
+   * If inflation is 12%, you actually lost money.
+   * If the S&P 500 went up 20% while you made 10%, you wasted your time picking stocks.
+   * If you took on the risk of a chaotic penny stock just to make a safe 5% return, you made a bad bet.
 
 **EvalPortfolio** bridges the gap between complex Wall Street theory and everyday investing. It helps the user to evaluate their stock selection and allocation of funds and quantifies the evaluation to make it digestible to the user. In simple words, EvalPortfolio is a calculator of a single **"Goodness Score" (0-100)** that is based on three first-principle pillars of investment: **Earning**, **Stability**, and **Risk**.
 
----
 
 ## The Core Logic: The 3 Pillars of "Goodness"
 
@@ -66,7 +65,6 @@ $$
 
 Since beating the market is extremely hard, we don't penalize the score too hard for having an Alpha near 0.
 
----
 
 ## Under the Hood: The Math
 
@@ -96,7 +94,6 @@ $$
 * **$R_m$**: Market Return (S&P 500).
 * **$\beta$**: The portfolio's sensitivity to market movements.
 
----
 
 ## Tech Stack
 
