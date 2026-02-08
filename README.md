@@ -27,10 +27,10 @@ We don't just sum up your profits. We grade your portfolio on a curve against th
 Read more here: https://docs.google.com/document/d/1rXD0MWqgPYW27OnrxW_8jGhssJB9uKTWCmpM0AfSevA/edit?tab=t.4cxgxgjoe0jd.
 
 Final score is between 0 and 100: 
-    * score = 81+: EXCELLENT (Professional Grade)
-    * score = 61..80: GOOD (Solid Strategy)
-    * score = 41..60: MEDIOCRE (Needs Tuning)
-    * score = 0..40: POOR (High Risk / Low Reward)
+  * score = 81+: EXCELLENT (Professional Grade)
+  * score = 61..80: GOOD (Solid Strategy)
+  * score = 41..60: MEDIOCRE (Needs Tuning)
+  * score = 0..40: POOR (High Risk / Low Reward)
 
 ### The Survival Test (Real Return): 30 points/100
 * **The Philosophy:** Money loses value over time due to inflation. If your portfolio grows by 2% but inflation is 3%, your "Nominal Return" is positive, but your "Real Return" is negative. You are getting poorer.
@@ -48,7 +48,7 @@ $$
 
 ### The Stability Test (Sharpe Ratio): 30 points/100
 * **The Philosophy:** High returns are useless if they come with heart-attack-inducing volatility. A portfolio that goes +50% one month and -40% the next is "inefficient." You should be paid for every unit of risk you take.
-* **The Metric:** **Sharpe Ratio** ($\frac{Return - RiskFree}{Volatility}$).
+* **The Metric:** **Sharpe Ratio** $$\frac{Return - RiskFree}{Volatility}$$
 * **The Score:**
     * Measures return per unit of risk
     * **Sharpe < 1.0:** Poor. (Too much risk for too little reward).
