@@ -1,4 +1,4 @@
-# EvalPortfolio
+# EvalPortfolio - TartanHacks2026
 - Luke T. Bailey - <ltb33@pitt.edu>
 - Andrew Y. Chen - <ayc23@pitt.edu>
 - Anastasiia Rudenko - <anastasiia.rudenko@pitt.edu>
@@ -20,11 +20,13 @@ In finance, a +10% return is meaningless without context.
 
 **EvalPortfolio** bridges the gap between complex Wall Street theory and everyday investing. It helps the user to evaluate their stock selection and allocation of funds and quantifies the evaluation to make it digestible to the user. In simple words, EvalPortfolio is a calculator of a single **"Goodness Score" (0-100)** that is based on three first-principle pillars of investment: **Earning**, **Stability**, and **Risk**.
 
+**DEMO: [YouTube](https://www.youtube.com/watch?v=ufZDIBR8W0Y).**
+
 
 ## The Core Logic: The 3 Pillars of "Goodness"
 
 We don't just sum up your profits. We grade your portfolio on a curve against the harsh reality of the market.
-Read more here: https://docs.google.com/document/d/1rXD0MWqgPYW27OnrxW_8jGhssJB9uKTWCmpM0AfSevA/edit?tab=t.4cxgxgjoe0jd.
+Read more here: [GoogleDocs](https://docs.google.com/document/d/1rXD0MWqgPYW27OnrxW_8jGhssJB9uKTWCmpM0AfSevA/edit?tab=t.4cxgxgjoe0jd).
 
 Final score is between 0 and 100: 
   * score = 81+: EXCELLENT (Professional Grade)
